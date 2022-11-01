@@ -2,6 +2,7 @@ import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
+import { Raycaster } from 'three'
 
 /**
  * Base
@@ -40,7 +41,7 @@ scene.add(object1, object2, object3)
 /**
  * Raycaster
  */
-// const raycaster = new THREE.Raycaster()
+const raycaster = new THREE.Raycaster()
 // const rayOrigin = new THREE.Vector3(-3, 0, 0)
 // const rayDirection = new THREE.Vector3(10, 0, 0)
 // rayDirection.normalize()
@@ -106,6 +107,13 @@ const tick = () => {
     object1.position.y = Math.sin(elapsedTime * 0.3) * 1.5
     object2.position.y = Math.sin(elapsedTime * 0.8) * 1.5
     object3.position.y = Math.sin(elapsedTime * 1.4) * 1.5
+
+    //Cast a ray
+    const rayOrigin = new THREE.Vector3(-3, 0, 0)
+    const rayDirection = new THREE.Vector3(1, 0, 0)
+    rayDirection.normalize()
+
+    raycaster.set(rayOrigin,rayDirection)
     // Update controls
     controls.update()
 
