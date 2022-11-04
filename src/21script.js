@@ -1,9 +1,9 @@
 /*
- * @Description: 
+ * @Description: Scroll based animation
  * @Author: wanghexing
  * @Date: 2022-10-26 10:59:53
  * @LastEditors: wanghexing
- * @LastEditTime: 2022-11-03 10:54:40
+ * @LastEditTime: 2022-11-04 17:02:47
  */
 import './style.css'
 import * as THREE from 'three'
