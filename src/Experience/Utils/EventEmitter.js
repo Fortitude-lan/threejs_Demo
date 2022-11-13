@@ -167,7 +167,6 @@ export default class {
         names = names.replace(/[^a-zA-Z0-9 ,/.]/g, '')
         names = names.replace(/[,/]+/g, ' ')
         names = names.split(' ')
-
         return names
     }
 
