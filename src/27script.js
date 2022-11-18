@@ -1,17 +1,9 @@
-/*
- * @Description: 
- * @Author: wanghexing
- * @Date: 2022-11-09 09:22:45
- * @LastEditors: wanghexing
- * @LastEditTime: 2022-11-14 12:56:04
- */
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import * as dat from 'lil-gui'
-import testVertexShader from './shaders/28test/vertex.glsl'
-import testFragmentShader from './shaders/28test/fragment.glsl'
-
+import testVertexShader from './shaders/test/vertex.glsl'
+import testFragmentShader from './shaders/test/fragment.glsl'
 /**
  * Base
  */
@@ -25,20 +17,47 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
+const flagTexture = textureLoader.load('/textures/flag-french.jpg')
+/**
  * Test mesh
  */
 // Geometry
 const geometry = new THREE.PlaneGeometry(1, 1, 32, 32)
 
+const count = geometry.attributes.position.count
+const randoms = new Float32Array(count)
+for (let i = 0; i < count; i++) {
+    randoms[i] = Math.random()
+}
+geometry.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1))
+
 // Material
 const material = new THREE.ShaderMaterial({
     vertexShader: testVertexShader,
     fragmentShader: testFragmentShader,
-    side: THREE.DoubleSide
+    // side:THREE.DoubleSide, //看两面
+    transparent: true,
+    uniforms: {
+        uFrequency: { value: new THREE.Vector2(10, 5) },
+        uTime: { value: 0 },
+        uColor: { value: new THREE.Color('orange') },
+        uTexture: { value: flagTexture }
+
+    }
 })
-console.log(geometry);
+
+gui.add(material.uniforms.uFrequency.value, 'x')
+    .min(0).max(20).step(0.01).name('frequencyX')
+gui.add(material.uniforms.uFrequency.value, 'y')
+    .min(0).max(20).step(0.01).name('frequencyY')
+
+
 // Mesh
 const mesh = new THREE.Mesh(geometry, material)
+mesh.scale.y = 2 / 3
 scene.add(mesh)
 
 /**
@@ -49,8 +68,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -88,8 +106,14 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 /**
  * Animate
  */
-const tick = () =>
-{
+const clock = new THREE.Clock()
+
+const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+
+    //update material
+    material.uniforms.uTime.value = elapsedTime
+
     // Update controls
     controls.update()
 
