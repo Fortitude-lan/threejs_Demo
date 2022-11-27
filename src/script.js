@@ -105,6 +105,8 @@ window.addEventListener('resize', () => {
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    
+    //Update effect composer
     effectComposer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     effectComposer.setSize(sizes.width, sizes.height)
 
@@ -166,8 +168,8 @@ const rgbShiftPass = new ShaderPass(RGBShiftShader)
 // rgbShiftPass.enabled = false
 effectComposer.addPass(rgbShiftPass)
 
-// const effectColorSpaceConversion = new ShaderPass( GammaCorrectionShader );
-// effectComposer.addPass( effectColorSpaceConversion );
+const effectColorSpaceConversion = new ShaderPass( GammaCorrectionShader );
+effectComposer.addPass( effectColorSpaceConversion );
 /**
  * Animate
  */
