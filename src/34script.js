@@ -3,33 +3,24 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { gsap } from 'gsap'
-
 /**
  * Loaders
  */
-let sceneReady = false
 const loadingBarElement = document.querySelector('.loading-bar')
 const loadingManager = new THREE.LoadingManager(
     // Loaded
     () => {
-        // Wait a little
-        window.setTimeout(() => {
-            // Animate overlay
+
+        gsap.delayedCall(0.5, () => {
             gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0, delay: 1 })
 
-            // Update loadingBarElement
             loadingBarElement.classList.add('ended')
             loadingBarElement.style.transform = ''
-        }, 500)
-
-        window.setTimeout(() => {
-            sceneReady = true
-        }, 2000)
+        })
     },
-
     // Progress
     (itemUrl, itemsLoaded, itemsTotal) => {
-        // Calculate the progress and update the loadingBarElement
+        // console.log(itemUrl, itemsLoaded, itemsTotal)
         const progressRatio = itemsLoaded / itemsTotal
         loadingBarElement.style.transform = `scaleX(${progressRatio})`
     }
@@ -48,30 +39,26 @@ const canvas = document.querySelector('canvas.webgl')
 
 // Scene
 const scene = new THREE.Scene()
-
 /**
- * Overlay
+ *Overlay 
  */
 const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
 const overlayMaterial = new THREE.ShaderMaterial({
     // wireframe: true,
     transparent: true,
-    uniforms:
-    {
+    uniforms: {
         uAlpha: { value: 1 }
     },
     vertexShader: `
-        void main()
-        {
-            gl_Position = vec4(position, 1.0);
+        void main(){
+            // gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+            gl_Position = vec4(position,1.0);
         }
     `,
     fragmentShader: `
         uniform float uAlpha;
-
-        void main()
-        {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+        void main(){
+            gl_FragColor = vec4(0.0,0.0,0.0,uAlpha);
         }
     `
 })
@@ -116,35 +103,16 @@ debugObject.envMapIntensity = 2.5
  * Models
  */
 gltfLoader.load(
-    '/models/DamagedHelmet/glTF/DamagedHelmet.gltf',
+    '/models/FlightHelmet/glTF/FlightHelmet.gltf',
     (gltf) => {
-        gltf.scene.scale.set(2.5, 2.5, 2.5)
+        gltf.scene.scale.set(10, 10, 10)
+        gltf.scene.position.set(0, - 4, 0)
         gltf.scene.rotation.y = Math.PI * 0.5
         scene.add(gltf.scene)
 
         updateAllMaterials()
     }
 )
-/**
- * Points of interest
- */
-const raycaster = new THREE.Raycaster()
-const points = [
-    {
-        position: new THREE.Vector3(1.55, 0.3, - 0.6),
-        element: document.querySelector('.point-0')
-    },
-    {
-        position: new THREE.Vector3(0.5, 0.8, - 1.6),
-        element: document.querySelector('.point-1')
-    },
-    {
-        position: new THREE.Vector3(1.6, - 1.3, - 0.7),
-        element: document.querySelector('.point-2')
-    }
-]
-
-
 
 /**
  * Lights
@@ -214,36 +182,6 @@ const tick = () => {
     // Update controls
     controls.update()
 
-    //Update every point
-    if (sceneReady) {
-
-        for (const point of points) {
-            //point position
-            const screenPosition = point.position.clone()
-            screenPosition.project(camera)
-
-            raycaster.setFromCamera(screenPosition, camera)
-            const intersects = raycaster.intersectObjects(scene.children, true)
-            if (intersects.length === 0) {
-                point.element.classList.add('visible')
-            }
-            else {
-                const intersectionDistance = intersects[0].distance
-                const pointDistance = point.position.distanceTo(camera.position)
-                if (intersectionDistance < pointDistance) {
-                    point.element.classList.remove('visible')
-                }
-                else {
-                    point.element.classList.add('visible')
-                }
-            }
-            const translateX = screenPosition.x * sizes.width * 0.5
-            const translateY = -screenPosition.y * sizes.height * 0.5
-            point.element.style.transform = `translate(${translateX}px,${translateY}px) `
-
-
-        }
-    }
     // Render
     renderer.render(scene, camera)
 
