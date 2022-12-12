@@ -1,47 +1,30 @@
 import './style.css'
+import * as dat from 'lil-gui'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { gsap } from 'gsap'
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
+import firefliesVertexShader from './shaders/fireflies/vertex.glsl'
+import firefliesFragmentShader from './shaders/fireflies/fragment.glsl'
+import portalVertexShader from './shaders/portal/vertex.glsl'
+import portalFragmentShader from './shaders/portal/fragment.glsl'
+import { during } from 'async'
 
 /**
- * Loaders
+ * spector
  */
-let sceneReady = false
-const loadingBarElement = document.querySelector('.loading-bar')
-const loadingManager = new THREE.LoadingManager(
-    // Loaded
-    () => {
-        // Wait a little
-        window.setTimeout(() => {
-            // Animate overlay
-            gsap.to(overlayMaterial.uniforms.uAlpha, { duration: 3, value: 0, delay: 1 })
-
-            // Update loadingBarElement
-            loadingBarElement.classList.add('ended')
-            loadingBarElement.style.transform = ''
-        }, 500)
-
-        window.setTimeout(() => {
-            sceneReady = true
-        }, 2000)
-    },
-
-    // Progress
-    (itemUrl, itemsLoaded, itemsTotal) => {
-        // Calculate the progress and update the loadingBarElement
-        const progressRatio = itemsLoaded / itemsTotal
-        loadingBarElement.style.transform = `scaleX(${progressRatio})`
-    }
-)
-const gltfLoader = new GLTFLoader(loadingManager)
-const cubeTextureLoader = new THREE.CubeTextureLoader(loadingManager)
+// const SPECTOR = require('spectorjs')
+// const spector = new SPECTOR.Spector()
+// spector.displayUI()
 
 /**
  * Base
  */
 // Debug
 const debugObject = {}
+const gui = new dat.GUI({
+    width: 300
+})
 
 // Canvas
 const canvas = document.querySelector('canvas.webgl')
@@ -50,112 +33,111 @@ const canvas = document.querySelector('canvas.webgl')
 const scene = new THREE.Scene()
 
 /**
- * Overlay
+ * Loaders
  */
-const overlayGeometry = new THREE.PlaneGeometry(2, 2, 1, 1)
-const overlayMaterial = new THREE.ShaderMaterial({
-    // wireframe: true,
-    transparent: true,
-    uniforms:
-    {
-        uAlpha: { value: 1 }
+// Texture loader
+const textureLoader = new THREE.TextureLoader()
+
+// Draco loader
+const dracoLoader = new DRACOLoader()
+dracoLoader.setDecoderPath('draco/')
+
+// GLTF loader
+const gltfLoader = new GLTFLoader()
+gltfLoader.setDRACOLoader(dracoLoader)
+/**
+ * Texture
+ */
+const backedTexture = textureLoader.load('backed.jpg')
+backedTexture.flipY = false
+backedTexture.encoding = THREE.sRGBEncoding
+
+
+/** 
+ * Material
+ */
+//Baked material
+const backMaterial = new THREE.MeshBasicMaterial({ map: backedTexture })
+
+//Potal light material
+debugObject.portalColorStart = '#000'
+debugObject.portalColorEnd = '#fff'
+gui.addColor(debugObject, 'portalColorStart').onChange(() => portalLightMaterial.uniforms.uColorStart.value.set(debugObject.portalColorStart))
+gui.addColor(debugObject, 'portalColorEnd').onChange(() => portalLightMaterial.uniforms.uColorEnd.value.set(debugObject.portalColorEnd))
+const portalLightMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        uTime: { value: 0 },
+        uColorStart: { value: new THREE.Color(debugObject.portalColorStart) },
+        uColorEnd: { value: new THREE.Color(debugObject.portalColorEnd) },
     },
-    vertexShader: `
-        void main()
-        {
-            gl_Position = vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        uniform float uAlpha;
-
-        void main()
-        {
-            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
-        }
-    `
+    vertexShader: portalVertexShader,
+    fragmentShader: portalFragmentShader,
 })
-const overlay = new THREE.Mesh(overlayGeometry, overlayMaterial)
-scene.add(overlay)
+
+
+
+//Pole light material
+const poleLightMaterial = new THREE.MeshBasicMaterial({ color: 0xffffe5 })
+
 
 /**
- * Update all materials
- */
-const updateAllMaterials = () => {
-    scene.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-            // child.material.envMap = environmentMap
-            child.material.envMapIntensity = debugObject.envMapIntensity
-            child.material.needsUpdate = true
-            child.castShadow = true
-            child.receiveShadow = true
-        }
-    })
-}
-
-/**
- * Environment map
- */
-const environmentMap = cubeTextureLoader.load([
-    '/textures/environmentMaps/0/px.jpg',
-    '/textures/environmentMaps/0/nx.jpg',
-    '/textures/environmentMaps/0/py.jpg',
-    '/textures/environmentMaps/0/ny.jpg',
-    '/textures/environmentMaps/0/pz.jpg',
-    '/textures/environmentMaps/0/nz.jpg'
-])
-
-environmentMap.encoding = THREE.sRGBEncoding
-
-scene.background = environmentMap
-scene.environment = environmentMap
-
-debugObject.envMapIntensity = 2.5
-
-/**
- * Models
+ * model
  */
 gltfLoader.load(
-    '/models/DamagedHelmet/glTF/DamagedHelmet.gltf',
+    'portal.glb',
     (gltf) => {
-        gltf.scene.scale.set(2.5, 2.5, 2.5)
-        gltf.scene.rotation.y = Math.PI * 0.5
-        scene.add(gltf.scene)
+        // gltf.scene.traverse((child) => {
+        //     child.material = backMaterial
+        // })
+        const backeedAMesh = gltf.scene.children.find(child => child.name === 'backed')
+        const portalLightMesh = gltf.scene.children.find(child => child.name === 'portalLight')
+        const poleLightAMesh = gltf.scene.children.find(child => child.name === 'poleLightA')
+        const poleLightBMesh = gltf.scene.children.find(child => child.name === 'poleLightB')
 
-        updateAllMaterials()
+        backeedAMesh.material = backMaterial
+        poleLightAMesh.material = poleLightMaterial
+        poleLightBMesh.material = poleLightMaterial
+        portalLightMesh.material = portalLightMaterial
+        scene.add(gltf.scene)
     }
 )
-/**
- * Points of interest
- */
-const raycaster = new THREE.Raycaster()
-const points = [
-    {
-        position: new THREE.Vector3(1.55, 0.3, - 0.6),
-        element: document.querySelector('.point-0')
-    },
-    {
-        position: new THREE.Vector3(0.5, 0.8, - 1.6),
-        element: document.querySelector('.point-1')
-    },
-    {
-        position: new THREE.Vector3(1.6, - 1.3, - 0.7),
-        element: document.querySelector('.point-2')
-    }
-]
-
 
 
 /**
- * Lights
+ * Firefiles
  */
-const directionalLight = new THREE.DirectionalLight('#ffffff', 3)
-directionalLight.castShadow = true
-directionalLight.shadow.camera.far = 15
-directionalLight.shadow.mapSize.set(1024, 1024)
-directionalLight.shadow.normalBias = 0.05
-directionalLight.position.set(0.25, 3, - 2.25)
-scene.add(directionalLight)
+const firefliesGeometry = new THREE.BufferGeometry()
+const firefLiesCount = 30;
+const positionArrat = new Float32Array(firefLiesCount * 3)
+const scaleArray = new Float32Array(firefLiesCount)
+for (let i = 0; i < firefLiesCount; i++) {
+    positionArrat[i * 3 + 0] = (Math.random() - 0.5) * 4
+    positionArrat[i * 3 + 1] = Math.random() * 1.5
+    positionArrat[i * 3 + 2] = (Math.random() - 0.5) * 4
+    scaleArray[i] = Math.random()
+}
+
+firefliesGeometry.setAttribute('position', new THREE.BufferAttribute(positionArrat, 3))
+firefliesGeometry.setAttribute('aScale', new THREE.BufferAttribute(scaleArray, 1))
+
+//material
+const firefliesMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        uTime: { value: 0 },
+        uPixelRate: { value: Math.min(window.devicePixelRatio, 2) },
+        uSize: { value: 100 },
+    },
+    vertexShader: firefliesVertexShader,
+    fragmentShader: firefliesFragmentShader,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+})
+gui.add(firefliesMaterial.uniforms.uSize, 'value').name('firefliesSize').min(0).max(500).step(1)
+
+//points
+const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
+scene.add(fireflies)
 
 /**
  * Sizes
@@ -177,14 +159,19 @@ window.addEventListener('resize', () => {
     // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+    //updates fireflies
+    firefliesMaterial.uniforms.uPixelRate.value = Math.min(window.devicePixelRatio, 2)
 })
 
 /**
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.set(4, 1, - 4)
+const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100)
+camera.position.x = 4
+camera.position.y = 2
+camera.position.z = 4
 scene.add(camera)
 
 // Controls
@@ -198,52 +185,30 @@ const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
     antialias: true
 })
-renderer.physicallyCorrectLights = true
-renderer.outputEncoding = THREE.sRGBEncoding
-renderer.toneMapping = THREE.ReinhardToneMapping
-renderer.toneMappingExposure = 3
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.outputEncoding = THREE.sRGBEncoding
 
+debugObject.clearColor = '#000000'
+renderer.setClearColor(debugObject.clearColor)
+gui
+    .addColor(debugObject, 'clearColor')
+    .onChange(() => renderer.setClearColor(debugObject.clearColor))
+    .name('backgroundColor')
 /**
  * Animate
  */
+const clock = new THREE.Clock()
+
 const tick = () => {
+    const elapsedTime = clock.getElapsedTime()
+    // update utime
+    portalLightMaterial.uniforms.uTime.value = elapsedTime
+    firefliesMaterial.uniforms.uTime.value = elapsedTime
+
     // Update controls
     controls.update()
 
-    //Update every point
-    if (sceneReady) {
-
-        for (const point of points) {
-            //point position
-            const screenPosition = point.position.clone()
-            screenPosition.project(camera)
-
-            raycaster.setFromCamera(screenPosition, camera)
-            const intersects = raycaster.intersectObjects(scene.children, true)
-            if (intersects.length === 0) {
-                point.element.classList.add('visible')
-            }
-            else {
-                const intersectionDistance = intersects[0].distance
-                const pointDistance = point.position.distanceTo(camera.position)
-                if (intersectionDistance < pointDistance) {
-                    point.element.classList.remove('visible')
-                }
-                else {
-                    point.element.classList.add('visible')
-                }
-            }
-            const translateX = screenPosition.x * sizes.width * 0.5
-            const translateY = -screenPosition.y * sizes.height * 0.5
-            point.element.style.transform = `translate(${translateX}px,${translateY}px) `
-
-
-        }
-    }
     // Render
     renderer.render(scene, camera)
 
