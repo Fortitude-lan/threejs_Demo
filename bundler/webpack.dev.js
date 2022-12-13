@@ -1,3 +1,10 @@
+/*
+ * @Description: 
+ * @Author: wanghexing
+ * @Date: 2022-10-26 10:59:53
+ * @LastEditors: wanghexing
+ * @LastEditTime: 2022-12-13 15:01:22
+ */
 const path = require('path')
 const { merge } = require('webpack-merge')
 const commonConfiguration = require('./webpack.common.js')
