@@ -1,3 +1,9 @@
+/** 
+ * 1.gltf loader
+ * 2.draco loader
+ * 3.scene.environment
+ * 4.animation
+ */
 import './style.css'
 import * as dat from 'lil-gui'
 import * as THREE from 'three'
@@ -15,11 +21,11 @@ const sizes = {
     height: window.innerHeight
 }
 const canvas = document.querySelector('canvas.webgl')
+let mixer;
 
 init()
 initEnv()
 loadModal()
-animate()
 
 
 /**
@@ -37,6 +43,7 @@ window.addEventListener('resize', () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 function init() {
+    //clock
     clock = new THREE.Clock()
 
     //renderer
@@ -60,9 +67,9 @@ function init() {
     controls.enableDamping = true//启用阻尼（惯性）
 
 }
-function initEnv(){
+function initEnv() {
     const pmremGenerator = new THREE.PMREMGenerator(renderer)
-    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(),0.01).texture
+    scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.01).texture
 }
 function loadModal() {
     const gltfLoader = new GLTFLoader()
@@ -83,11 +90,18 @@ function loadModal() {
             })
             model.position.set(1, 1, 0)
             model.scale.set(0.01, 0.01, 0.01)
+
+            //animate
+            mixer = new THREE.AnimationMixer(model);
+            mixer.clipAction(gltf.animations[0]).play()
+
+            animate()
         }
     )
 }
 function animate() {
-    const elapsedTime = clock.getElapsedTime()
+    const delta = clock.getDelta()
+    mixer.update(delta)
 
     controls.update()//更新控制器
     renderer.render(scene, camera)
