@@ -78,12 +78,13 @@ function loadModal() {
     gltfLoader.setDRACOLoader(dracoLoader)
 
     gltfLoader.load(
-        'models/gltf/LittlestTokyo.glb',
+        'models/cake.glb',
         (gltf) => {
-            // console.log(gltf);
             const model = gltf.scene
             scene.add(model)
             gltf.scene.traverse((child) => {
+            console.log(child);
+
                 if (child.isMesh) {
 
                 }
