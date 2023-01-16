@@ -3,13 +3,14 @@
  * @Author: wanghexing
  * @Date: 2022-11-09 11:37:40
  * @LastEditors: wanghexing
- * @LastEditTime: 2022-11-10 14:27:53
+ * @LastEditTime: 2023-01-07 17:44:55
  */
 import * as THREE from 'three'
 import Experience from '../Experience.js'
 import Environment from './Environment.js'
 import Floor from './Floor.js'
 import Fox from './Fox.js'
+import House from './House.js'
 
 export default class World {
     constructor(_options) {
@@ -21,8 +22,9 @@ export default class World {
 
         this.resources.on('ready', () => {
             //Setup
-            this.floor = new Floor()
-            this.fox = new Fox()
+            // this.floor = new Floor()
+            // this.fox = new Fox()
+            this.house = new House()
             this.environment = new Environment()
         })
     }

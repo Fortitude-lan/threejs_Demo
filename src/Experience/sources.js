@@ -1,3 +1,10 @@
+/*
+ * @Description: 
+ * @Author: wanghexing
+ * @Date: 2022-11-10 12:37:37
+ * @LastEditors: wanghexing
+ * @LastEditTime: 2023-01-08 13:30:52
+ */
 export default [
     {
         name: 'environmentMapTexture',
@@ -26,4 +33,10 @@ export default [
         type: "gltfModel",
         path: 'models/Fox/glTF-Fox/Fox.gltf',
     },
+    {
+        name: 'houseModel',
+        type: "glbModel",
+        path: 'models/cake.glb',
+
+    }
 ]

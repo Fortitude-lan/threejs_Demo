@@ -47,7 +47,7 @@ gltfLoader.setDRACOLoader(dracoLoader)
 /**
  * Texture
  */
-const backedTexture = textureLoader.load('backed.jpg')
+const backedTexture = textureLoader.load('/textures/backed.jpg')
 backedTexture.flipY = false
 backedTexture.encoding = THREE.sRGBEncoding
 

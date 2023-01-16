@@ -3,7 +3,7 @@
  * @Author: wanghexing
  * @Date: 2022-11-09 14:08:03
  * @LastEditors: wanghexing
- * @LastEditTime: 2022-11-11 17:52:04
+ * @LastEditTime: 2023-01-06 17:52:31
  */
 import * as THREE from 'three'
 import Experience from "../Experience";
@@ -24,12 +24,15 @@ export default class Environment {
     }
     setSunLight() {
         this.sunLight = new THREE.DirectionalLight('#ffffff', 4)
+        this.sunLightHelper = new THREE.DirectionalLightHelper(this.sunLight, 4)
         this.sunLight.castShadow = true
         this.sunLight.shadow.camera.far = 15
         this.sunLight.shadow.mapSize.set(1024, 1024)
         this.sunLight.shadow.normalBias = 0.05
-        this.sunLight.position.set(3.5, 2, - 1.25)
+        // this.sunLight.position.set(3.5, 2, - 1.25)
+        this.sunLight.position.set(1,5,1)
         this.scene.add(this.sunLight)
+        this.scene.add(this.sunLightHelper)
 
         //Debug
         if (this.debug.active) {
